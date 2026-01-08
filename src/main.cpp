@@ -8,18 +8,23 @@
 #include <LiquidCrystal_I2C.h>
 
 #include <fetchWeatherData.h>
+#include <fetchForecastData.h>
 
 GTimer<millis> FetchTimer(FETCH_INTERVAL, true);
+GTimer<millis> ForecastTimer(FORECAST_INTERVAL, true);
 GTimer<millis> DisplayRotateTimer(5000, true); // Rotate display every 5 seconds
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
 
 enum DisplayState {
     DISPLAY_WEATHER,
-    DISPLAY_RECOMMENDATION
+    DISPLAY_RECOMMENDATION,
+    DISPLAY_HOURLY_FORECAST,
+    DISPLAY_DAILY_FORECAST
 };
 
 DisplayState currentDisplay = DISPLAY_WEATHER;
+int forecastDisplayIndex = 0;  // For cycling through forecasts
 
 void initializeLCD() {
     lcd.init();          // initialize LCD
@@ -68,6 +73,72 @@ void showClothRecommendation() {
     }
 }
 
+// Convert WMO weather code to readable text
+String getWeatherDescription(int code) {
+    if (code == 0) return "Clear";
+    if (code == 1) return "MostClear";
+    if (code == 2) return "PartCloud";
+    if (code == 3) return "Overcast";
+    if (code == 45 || code == 48) return "Fog";
+    if (code >= 51 && code <= 55) return "Drizzle";
+    if (code >= 61 && code <= 65) return "Rain";
+    if (code >= 71 && code <= 75) return "Snow";
+    if (code == 77) return "SnowGrain";
+    if (code >= 80 && code <= 82) return "Showers";
+    if (code >= 85 && code <= 86) return "SnowShow";
+    if (code == 95) return "Thunder";
+    if (code == 96 || code == 99) return "ThunHail";
+    return "Unknown";
+}
+
+void showHourlyForecast() {
+    lcd.clear();
+    if (hourlyForecastCount == 0) {
+        lcd.setCursor(0, 0);
+        lcd.print("No forecast data");
+        return;
+    }
+    
+    // Show 3 hours at a time, cycle through them
+    int startIdx = forecastDisplayIndex % hourlyForecastCount;
+    
+    lcd.setCursor(0, 0);
+    String timeStr = hourlyForecasts[startIdx].time;
+    // Extract hour from ISO timestamp (e.g., "2026-01-08T14:00")
+    int hourStart = timeStr.indexOf('T') + 1;
+    lcd.print(timeStr.substring(hourStart, hourStart + 5));
+    lcd.print(" ");
+    lcd.print(hourlyForecasts[startIdx].temperature, 1);
+    lcd.print("C");
+    
+    lcd.setCursor(0, 1);
+    lcd.print(getWeatherDescription(hourlyForecasts[startIdx].weatherCode));
+}
+
+void showDailyForecast() {
+    lcd.clear();
+    if (dailyForecastCount == 0) {
+        lcd.setCursor(0, 0);
+        lcd.print("No forecast data");
+        return;
+    }
+    
+    // Show 1 day at a time, cycle through them
+    int dayIdx = forecastDisplayIndex % dailyForecastCount;
+    
+    lcd.setCursor(0, 0);
+    String dateStr = dailyForecasts[dayIdx].date;
+    lcd.print(dateStr.substring(5));  // Show MM-DD
+    lcd.print(" ");
+    lcd.print(dailyForecasts[dayIdx].tempMin, 0);
+    lcd.print("|");
+    lcd.print(dailyForecasts[dayIdx].tempMax, 0);
+    lcd.print("C");
+    
+    lcd.setCursor(0, 1);
+    lcd.print(getWeatherDescription(dailyForecasts[dayIdx].weatherCode));
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println();
@@ -94,30 +165,89 @@ void setup() {
     if (fetchWeatherData()) {
         Serial.println("initial weather data fetch successful");
     } else {
-        Serial.println("initial weather data fetch failed, skipping forecast");
+        Serial.println("initial weather data fetch failed");
+    }
+    
+    // Fetch initial forecast data from Open-Meteo
+    if (fetchForecastData()) {
+        Serial.println("initial forecast data fetch successful");
+    } else {
+        Serial.println("initial forecast data fetch failed");
     }
 }
 
 void loop() {
-    // Fetch new weather data periodically
+    // Fetch new weather data periodically (every 3 seconds)
     if (FetchTimer.tick()) {
         if (fetchWeatherData()) {
             Serial.println("Weather data updated");
         }
     }
+    
+    // Fetch forecast data periodically (every 30 minutes)
+    if (ForecastTimer.tick()) {
+        if (fetchForecastData()) {
+            Serial.println("Forecast data updated");
+        }
+    }
 
     // Rotate display asynchronously
     if (DisplayRotateTimer.tick()) {
-        switch (currentDisplay) {
-            case DISPLAY_WEATHER:
-                showWeatherOnLCD();
-                currentDisplay = DISPLAY_RECOMMENDATION;
-                break;
+        // Find next enabled display state
+        bool stateChanged = false;
+        int attempts = 0;
+        
+        while (!stateChanged && attempts < 10) {
+            attempts++;
             
-            case DISPLAY_RECOMMENDATION:
-                showClothRecommendation();
-                currentDisplay = DISPLAY_WEATHER;
-                break;
+            switch (currentDisplay) {
+                case DISPLAY_WEATHER:
+                    #if ENABLE_WEATHER_DISPLAY
+                        showWeatherOnLCD();
+                        stateChanged = true;
+                    #endif
+                    currentDisplay = DISPLAY_RECOMMENDATION;
+                    break;
+                
+                case DISPLAY_RECOMMENDATION:
+                    #if ENABLE_CLOTH_RECOMMENDATION
+                        showClothRecommendation();
+                        stateChanged = true;
+                    #endif
+                    currentDisplay = DISPLAY_HOURLY_FORECAST;
+                    forecastDisplayIndex = 0;
+                    break;
+                
+                case DISPLAY_HOURLY_FORECAST:
+                    #if ENABLE_HOURLY_FORECAST
+                        showHourlyForecast();
+                        stateChanged = true;
+                        forecastDisplayIndex++;
+                        if (forecastDisplayIndex >= 3) {  // Show 3 hourly forecasts
+                            currentDisplay = DISPLAY_DAILY_FORECAST;
+                            forecastDisplayIndex = 0;
+                        }
+                    #else
+                        currentDisplay = DISPLAY_DAILY_FORECAST;
+                        forecastDisplayIndex = 0;
+                    #endif
+                    break;
+                
+                case DISPLAY_DAILY_FORECAST:
+                    #if ENABLE_DAILY_FORECAST
+                        showDailyForecast();
+                        stateChanged = true;
+                        forecastDisplayIndex++;
+                        if (forecastDisplayIndex >= 3) {  // Show 3 daily forecasts
+                            currentDisplay = DISPLAY_WEATHER;
+                            forecastDisplayIndex = 0;
+                        }
+                    #else
+                        currentDisplay = DISPLAY_WEATHER;
+                        forecastDisplayIndex = 0;
+                    #endif
+                    break;
+            }
         }
     }
 
