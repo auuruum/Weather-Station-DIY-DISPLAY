@@ -25,6 +25,21 @@ void initializeLCD() {
     lcd.print("By aurum");
 }
 
+void showWeatherOnLCD() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("T:");
+    lcd.print(tempC);
+    lcd.print("C H:");
+    lcd.print(humidity);
+    lcd.print("%");
+
+    lcd.setCursor(0, 1);
+    lcd.print("P:");
+    lcd.print(pressure);
+    lcd.print("hPa");
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println();
@@ -58,7 +73,9 @@ void setup() {
 void loop() {
     if (FetchTimer.tick()) {
         fetchWeatherData();
+        showWeatherOnLCD();
     }
+
 
     sett_loop();
 }
