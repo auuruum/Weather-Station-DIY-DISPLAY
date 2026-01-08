@@ -24,11 +24,14 @@
 
 // Other constants
 #define FETCH_INTERVAL 3000  // milliseconds
-#define API_PORT 81 // Dont set to 80, it is used by settings server
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // Dont touch below this line
 #define MDNS_ADDRESS "weather-display"
+
+#define SENSOR_STANTION_MDNS "weather-station"
+#define SENSOR_STANTION_API_PORT 81
+#define SENSOR_STANTION_API_PATH "/weather"
 
 extern float tempC;
 extern float humidity;

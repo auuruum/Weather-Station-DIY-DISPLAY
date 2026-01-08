@@ -7,6 +7,7 @@
 #include <GTimer.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <LiquidCrystal_I2C.h>
 
 GTimer<millis> FetchTimer(FETCH_INTERVAL, true);
 
@@ -14,7 +15,15 @@ GTimer<millis> FetchTimer(FETCH_INTERVAL, true);
 bool fetchWeatherData() {
     HTTPClient http;
     
-    http.begin("http://weather-station.local:81/weather");
+    String url =
+        String("http://") +
+        SENSOR_STANTION_MDNS +
+        ".local:" +
+        String(SENSOR_STANTION_API_PORT) +
+        SENSOR_STANTION_API_PATH;
+
+    http.begin(url);
+
     int httpCode = http.GET();
     
     if (httpCode == HTTP_CODE_OK) {

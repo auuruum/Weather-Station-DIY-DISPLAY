@@ -81,15 +81,11 @@ void sett_begin() {
         Serial.print("Connected: ");
         Serial.println(WiFi.localIP());
 
-        Serial.print("API Started on: ");
-        Serial.println(WiFi.localIP().toString() + ":" + String(API_PORT));
     });
     WiFiConnector.onError([]() {
         Serial.print("Error. Start AP: ");
         Serial.println(WiFi.softAPIP());
 
-        Serial.print("API Started on: ");
-        Serial.println(WiFi.softAPIP().toString() + ":" + String(API_PORT));
     });
 
     WiFiConnector.setName(PROJECT_NAME);
