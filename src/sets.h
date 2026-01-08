@@ -4,6 +4,11 @@
 #define PROJECT_NAME "Weather Display"
 #define LOCATION_ALTITUDE 112 // meters above sea level (112 for Vilnius)
 
+// LCD settings
+#define LCD_ADDR 0x27
+#define LCD_COLS 16
+#define LCD_ROWS 2
+
 // Pin definitions
 #define LED_PIN 2
 

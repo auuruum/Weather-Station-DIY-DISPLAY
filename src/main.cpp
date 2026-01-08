@@ -11,9 +11,26 @@
 
 GTimer<millis> FetchTimer(FETCH_INTERVAL, true);
 
+LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
+
+void initializeLCD() {
+    lcd.init();          // initialize LCD
+    lcd.backlight();     // turn on backlight
+    lcd.clear();
+
+    lcd.setCursor(0, 0);
+    lcd.print("Weather Display");
+
+    lcd.setCursor(0, 1);
+    lcd.print("By aurum");
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println();
+    Wire.begin(21, 22);
+
+    initializeLCD();
 
     sett_begin();
 
