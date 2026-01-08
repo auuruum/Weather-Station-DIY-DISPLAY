@@ -1,7 +1,7 @@
 #pragma once
 
 // Can easly be modified to suit your project
-#define PROJECT_NAME "Weather Station DISPLAY"
+#define PROJECT_NAME "Weather Display"
 #define LOCATION_ALTITUDE 112 // meters above sea level (112 for Vilnius)
 
 // Pin definitions

@@ -1,49 +1,46 @@
 #include <Arduino.h>
-#include <HTTPClient.h>
-#include <WiFi.h>
-#include <ArduinoJson.h>
 
 #include "sets.h"
+
+#include <Wire.h>
+
 #include <GTimer.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 GTimer<millis> FetchTimer(FETCH_INTERVAL, true);
 
-// Variables to store weather data
-float tempC = 0;
-float humidity = 0;
-float pressure = 0;
-
-void fetchWeatherData() {
+// Function to fetch weather data from HTTP endpoint
+bool fetchWeatherData() {
     HTTPClient http;
     
-    // Use mDNS address or IP
     http.begin("http://weather-station.local:81/weather");
-    
     int httpCode = http.GET();
     
     if (httpCode == HTTP_CODE_OK) {
         String payload = http.getString();
-        Serial.println("Received: " + payload);
         
-        // Parse JSON response
-        JsonDocument doc;
+        StaticJsonDocument<512> doc;
         DeserializationError error = deserializeJson(doc, payload);
         
         if (!error) {
-            tempC = doc["temperature"];
-            humidity = doc["humidity"];
-            pressure = doc["pressure"];
+            tempC = doc["temp"].as<float>();
+            humidity = doc["humidity"].as<float>();
+            pressure = doc["pressure"].as<float>();
             
-            Serial.printf("Temp: %.1f°C, Humidity: %.1f%%, Pressure: %.1f hPa\n", 
-                         tempC, humidity, pressure);
+            http.end();
+            return true;
         } else {
-            Serial.println("JSON parse failed!");
+            Serial.print("JSON parse error: ");
+            Serial.println(error.c_str());
         }
     } else {
-        Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
+        Serial.print("HTTP request failed, code: ");
+        Serial.println(httpCode);
     }
     
     http.end();
+    return false;
 }
 
 void setup() {
@@ -52,27 +49,25 @@ void setup() {
 
     sett_begin();
 
-    // Connect to WiFi
-    WiFi.begin(db[kk::wifi_ssid].c_str(), db[kk::wifi_pass].c_str());
-    Serial.print("Connecting to WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("\nWiFi connected!");
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
+    Serial.println(db[kk::wifi_ssid]);
+
+    Serial.print("SETUP | LED is now ");
+    Serial.println(db[kk::switch_state] ? "ON" : "OFF");
 
     if (!MDNS.begin(MDNS_ADDRESS)) {
         Serial.println("Error setting up MDNS responder!");
         while(1) {
-            delay(1000);
+        delay(1000);
         }
     }
     Serial.println("mDNS responder started");
 
-    // Initial fetch
-    fetchWeatherData();
+    // Fetch initial weather data from HTTP endpoint
+    if (fetchWeatherData()) {
+        Serial.println("initial weather data fetch successful");
+    } else {
+        Serial.println("initial weather data fetch failed, skipping forecast");
+    }
 }
 
 void loop() {
