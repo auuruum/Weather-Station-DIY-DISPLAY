@@ -35,7 +35,7 @@ void initializeLCD() {
     lcd.print("Weather Display");
 
     lcd.setCursor(0, 1);
-    lcd.print("By aurum");
+    lcd.print("By A/N");
 }
 
 void showWeatherDataError() {
@@ -127,26 +127,30 @@ void showHourlyForecast() {
 
 void showDailyForecast() {
     lcd.clear();
-    if (dailyForecastCount == 0) {
+    if (dailyForecastCount <= 1) {
         lcd.setCursor(0, 0);
         lcd.print("No forecast data");
         return;
     }
     
-    // Show 1 day at a time, cycle through them
-    int dayIdx = forecastDisplayIndex % dailyForecastCount;
+    // Skip today (index 0), show next 3 days (indices 1, 2, 3)
+    int dayIdx = (forecastDisplayIndex % min(3, dailyForecastCount - 1)) + 1;
     
     lcd.setCursor(0, 0);
     String dateStr = dailyForecasts[dayIdx].date;
     lcd.print(dateStr.substring(5));  // Show MM-DD
+    Serial.println(dateStr.substring(5)); 
     lcd.print(" ");
     lcd.print(dailyForecasts[dayIdx].tempMin, 0);
+    Serial.println(dailyForecasts[dayIdx].tempMin, 0);
     lcd.print("|");
     lcd.print(dailyForecasts[dayIdx].tempMax, 0);
+    Serial.println(dailyForecasts[dayIdx].tempMax, 0);
     lcd.print("C");
     
     lcd.setCursor(0, 1);
     lcd.print(getWeatherDescription(dailyForecasts[dayIdx].weatherCode));
+    Serial.println(getWeatherDescription(dailyForecasts[dayIdx].weatherCode));
 }
 
 void setup() {

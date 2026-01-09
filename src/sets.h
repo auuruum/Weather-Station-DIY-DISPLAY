@@ -48,6 +48,7 @@
 extern float tempC;
 extern float humidity;
 extern float pressure;
+extern bool weatherDataValid;
 
 #include <GyverDBFile.h>
 #include <SettingsGyver.h>

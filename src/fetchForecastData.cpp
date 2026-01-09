@@ -24,7 +24,7 @@ void fetchForecastTask(void * parameter) {
                      "&hourly=temperature_2m,precipitation,weather_code" +
                      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum" +
                      "&timezone=" + String(OPENMETEO_TIMEZONE) +
-                     "&forecast_days=3";
+                     "&forecast_days=4";  // Request 4 days to get 3 future days (skipping today)
         
         Serial.print("Fetching forecast from: ");
         Serial.println(url);
