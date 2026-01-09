@@ -38,12 +38,6 @@
 #define OPENMETEO_LONGITUDE 25.3621  // Your location coordinates
 #define OPENMETEO_TIMEZONE "Europe/Vilnius"  // Timezone for forecast times
 
-// Display configuration - set to true/false to enable/disable screens
-#define ENABLE_WEATHER_DISPLAY true
-#define ENABLE_CLOTH_RECOMMENDATION true
-#define ENABLE_HOURLY_FORECAST true
-#define ENABLE_DAILY_FORECAST true
-
 // Dont touch below this line
 #define MDNS_ADDRESS "weather-display"
 
