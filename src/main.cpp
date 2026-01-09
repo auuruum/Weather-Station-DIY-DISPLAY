@@ -10,11 +10,11 @@
 #include <fetchWeatherData.h>
 #include <fetchForecastData.h>
 
-GTimer<millis> FetchTimer(FETCH_INTERVAL, true);
-GTimer<millis> ForecastTimer(FORECAST_INTERVAL, true);
 GTimer<millis> DisplayRotateTimer(5000, true); // Rotate display every 5 seconds
 
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
+
+bool weatherDataValid = false;  // Track if weather data was successfully fetched
 
 enum DisplayState {
     DISPLAY_WEATHER,
@@ -36,6 +36,16 @@ void initializeLCD() {
 
     lcd.setCursor(0, 1);
     lcd.print("By aurum");
+}
+
+void showWeatherDataError() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Weather Data");
+    lcd.setCursor(0, 1);
+    lcd.print("Not Available");
+    lcd.setCursor(0, 2);
+    lcd.print("Check sensor...");
 }
 
 void showWeatherOnLCD() {
@@ -160,36 +170,17 @@ void setup() {
         }
     }
     Serial.println("mDNS responder started");
-
-    // Fetch initial weather data from HTTP endpoint
-    if (fetchWeatherData()) {
-        Serial.println("initial weather data fetch successful");
-    } else {
-        Serial.println("initial weather data fetch failed");
-    }
     
-    // Fetch initial forecast data from Open-Meteo
-    if (fetchForecastData()) {
-        Serial.println("initial forecast data fetch successful");
-    } else {
-        Serial.println("initial forecast data fetch failed");
-    }
+    // Start async weather fetch task
+    startWeatherFetchTask();
+    
+    // Start async forecast fetch task
+    startForecastFetchTask();
 }
 
 void loop() {
-    // Fetch new weather data periodically (every 3 seconds)
-    if (FetchTimer.tick()) {
-        if (fetchWeatherData()) {
-            Serial.println("Weather data updated");
-        }
-    }
-    
-    // Fetch forecast data periodically (every 30 minutes)
-    if (ForecastTimer.tick()) {
-        if (fetchForecastData()) {
-            Serial.println("Forecast data updated");
-        }
-    }
+    // Weather data is now fetched in background task
+    // Forecast data is now fetched in background task
 
     // Rotate display asynchronously
     if (DisplayRotateTimer.tick()) {
@@ -203,7 +194,11 @@ void loop() {
             switch (currentDisplay) {
                 case DISPLAY_WEATHER:
                     if (db[kk::weather_display_state]) {
-                        showWeatherOnLCD();
+                        if (weatherDataValid) {
+                            showWeatherOnLCD();
+                        } else {
+                            showWeatherDataError();
+                        }
                         stateChanged = true;
                     }
                     currentDisplay = DISPLAY_RECOMMENDATION;
@@ -211,7 +206,11 @@ void loop() {
                 
                 case DISPLAY_RECOMMENDATION:
                     if (db[kk::cloth_recommendation_state]) {
-                        showClothRecommendation();
+                        if (weatherDataValid) {
+                            showClothRecommendation();
+                        } else {
+                            showWeatherDataError();
+                        }
                         stateChanged = true;
                     }
                     currentDisplay = DISPLAY_HOURLY_FORECAST;

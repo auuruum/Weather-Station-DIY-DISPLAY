@@ -1,7 +1,9 @@
 #ifndef FETCH_WEATHER_DATA_H
 #define FETCH_WEATHER_DATA_H
 
-// Function to fetch weather data from HTTP endpoint
-bool fetchWeatherData();
+extern bool weatherDataValid;
+
+// Start background task for fetching weather data
+void startWeatherFetchTask();
 
 #endif

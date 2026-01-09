@@ -25,7 +25,7 @@ extern DailyForecast dailyForecasts[7];     // Next 7 days
 extern int hourlyForecastCount;
 extern int dailyForecastCount;
 
-// Function to fetch forecast data from Open-Meteo
-bool fetchForecastData();
+// Start background task for fetching forecast data
+void startForecastFetchTask();
 
 #endif

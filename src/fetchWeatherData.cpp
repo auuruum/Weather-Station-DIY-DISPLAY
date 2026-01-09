@@ -3,43 +3,65 @@
 #include <ArduinoJson.h>
 #include "sets.h"
 
-// Function to fetch weather data from HTTP endpoint
-bool fetchWeatherData() {
-    HTTPClient http;
-    
-    String url =
-        String("http://") +
-        SENSOR_STANTION_MDNS +
-        ".local:" +
-        String(SENSOR_STANTION_API_PORT) +
-        SENSOR_STANTION_API_PATH;
+// Task handle for async fetch
+TaskHandle_t fetchTaskHandle = NULL;
 
-    http.begin(url);
+// Task function that runs in background
+void fetchWeatherTask(void * parameter) {
+    while(true) {
+        HTTPClient http;
+        
+        String url =
+            String("http://") +
+            SENSOR_STANTION_MDNS +
+            ".local:" +
+            String(SENSOR_STANTION_API_PORT) +
+            SENSOR_STANTION_API_PATH;
 
-    int httpCode = http.GET();
-    
-    if (httpCode == HTTP_CODE_OK) {
-        String payload = http.getString();
+        http.begin(url);
+        http.setTimeout(5000);
+
+        int httpCode = http.GET();
         
-        StaticJsonDocument<512> doc;
-        DeserializationError error = deserializeJson(doc, payload);
-        
-        if (!error) {
-            tempC = doc["temp"].as<float>();
-            humidity = doc["humidity"].as<float>();
-            pressure = doc["pressure"].as<float>();
+        if (httpCode == HTTP_CODE_OK) {
+            String payload = http.getString();
             
-            http.end();
-            return true;
+            StaticJsonDocument<512> doc;
+            DeserializationError error = deserializeJson(doc, payload);
+            
+            if (!error) {
+                tempC = doc["temp"].as<float>();
+                humidity = doc["humidity"].as<float>();
+                pressure = doc["pressure"].as<float>();
+                weatherDataValid = true;
+                Serial.println("Weather data updated");
+            } else {
+                Serial.print("JSON parse error: ");
+                Serial.println(error.c_str());
+                weatherDataValid = false;
+            }
         } else {
-            Serial.print("JSON parse error: ");
-            Serial.println(error.c_str());
+            Serial.print("HTTP request failed, code: ");
+            Serial.println(httpCode);
+            weatherDataValid = false;
         }
-    } else {
-        Serial.print("HTTP request failed, code: ");
-        Serial.println(httpCode);
+
+        http.end();
+        
+        // Wait before next fetch
+        vTaskDelay(FETCH_INTERVAL / portTICK_PERIOD_MS);
     }
-    
-    http.end();
-    return false;
+}
+
+// Start the background fetch task
+void startWeatherFetchTask() {
+    xTaskCreatePinnedToCore(
+        fetchWeatherTask,   // Task function
+        "WeatherFetch",     // Name
+        8192,               // Stack size
+        NULL,               // Parameters
+        1,                  // Priority
+        &fetchTaskHandle,   // Task handle
+        0                   // Core (0 = background core)
+    );
 }

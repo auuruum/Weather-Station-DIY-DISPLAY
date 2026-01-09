@@ -28,7 +28,7 @@
 #define COMFORT_MAX 24.0
 
 // Other constants
-#define FETCH_INTERVAL 3000  // milliseconds (real-time data)
+#define FETCH_INTERVAL 10000  // milliseconds (10 seconds - weather doesn't change that fast)
 #define FORECAST_INTERVAL 1800000  // milliseconds (30 minutes for forecast updates)
 #define SEALEVELPRESSURE_HPA (1013.25)
 
