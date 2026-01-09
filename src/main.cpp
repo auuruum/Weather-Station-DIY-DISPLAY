@@ -202,24 +202,24 @@ void loop() {
             
             switch (currentDisplay) {
                 case DISPLAY_WEATHER:
-                    #if ENABLE_WEATHER_DISPLAY
+                    if (db[kk::weather_display_state]) {
                         showWeatherOnLCD();
                         stateChanged = true;
-                    #endif
+                    }
                     currentDisplay = DISPLAY_RECOMMENDATION;
                     break;
                 
                 case DISPLAY_RECOMMENDATION:
-                    #if ENABLE_CLOTH_RECOMMENDATION
+                    if (db[kk::cloth_recommendation_state]) {
                         showClothRecommendation();
                         stateChanged = true;
-                    #endif
+                    }
                     currentDisplay = DISPLAY_HOURLY_FORECAST;
                     forecastDisplayIndex = 0;
                     break;
                 
                 case DISPLAY_HOURLY_FORECAST:
-                    #if ENABLE_HOURLY_FORECAST
+                    if (db[kk::hourly_forecast_state]) {
                         showHourlyForecast();
                         stateChanged = true;
                         forecastDisplayIndex++;
@@ -227,14 +227,14 @@ void loop() {
                             currentDisplay = DISPLAY_DAILY_FORECAST;
                             forecastDisplayIndex = 0;
                         }
-                    #else
+                    } else {
                         currentDisplay = DISPLAY_DAILY_FORECAST;
                         forecastDisplayIndex = 0;
-                    #endif
+                    }
                     break;
                 
                 case DISPLAY_DAILY_FORECAST:
-                    #if ENABLE_DAILY_FORECAST
+                    if (db[kk::daily_forecast_state]) {
                         showDailyForecast();
                         stateChanged = true;
                         forecastDisplayIndex++;
@@ -242,10 +242,10 @@ void loop() {
                             currentDisplay = DISPLAY_WEATHER;
                             forecastDisplayIndex = 0;
                         }
-                    #else
+                    } else {
                         currentDisplay = DISPLAY_WEATHER;
                         forecastDisplayIndex = 0;
-                    #endif
+                    }
                     break;
             }
         }

@@ -23,6 +23,19 @@ static void build(sets::Builder& b) {
         db.update();
     }
 
+    if (b.Switch(kk::weather_display_state, "Weather Display State")) {
+        db.update();
+    }
+    if (b.Switch(kk::cloth_recommendation_state, "Cloth Recommendation State")) {
+        db.update();
+    }
+    if (b.Switch(kk::hourly_forecast_state, "Hourly Forecast State")) {
+        db.update();
+    }
+    if (b.Switch(kk::daily_forecast_state, "Daily Forecast State")) {
+        db.update();
+    }
+
     b.LinearGauge(101, "Temperature", MIN_TEMP_C, MAX_TEMP_C, "°C", tempC, getColorByTemp(tempC));
     b.LinearGauge(102, "Humidity", MIN_HUMIDITY, MAX_HUMIDITY, "%", humidity, sets::Colors::Blue);
     b.LinearGauge(103, "Pressure", MIN_PRESSURE, MAX_PRESSURE, "hPa", pressure, sets::Colors::Aqua);
@@ -75,6 +88,11 @@ void sett_begin() {
     db.init(kk::wifi_pass, "");
     db.init(kk::switch_state, false);
     db.init(kk::close_ap, true);
+
+    db.init(kk::weather_display_state, true);
+    db.init(kk::cloth_recommendation_state, true);
+    db.init(kk::hourly_forecast_state, true);
+    db.init(kk::daily_forecast_state, true);
 
     // wifi
     WiFiConnector.onConnect([]() {

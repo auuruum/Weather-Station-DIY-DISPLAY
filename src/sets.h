@@ -69,5 +69,9 @@ DB_KEYS(
     wifi_ssid,
     wifi_pass,
     close_ap,
-    switch_state
+    switch_state,
+    weather_display_state,
+    cloth_recommendation_state,
+    hourly_forecast_state,
+    daily_forecast_state
 );
