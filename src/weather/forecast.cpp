@@ -1,7 +1,8 @@
-#include "fetchForecastData.h"
+#include "forecast.h"
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "sets.h"
+#include "../config/settings.h"
+#include "../config/constants.h"
 
 // Global forecast storage
 HourlyForecast hourlyForecasts[12];
@@ -10,10 +11,10 @@ int hourlyForecastCount = 0;
 int dailyForecastCount = 0;
 
 // Task handle for async fetch
-TaskHandle_t forecastTaskHandle = NULL;
+TaskHandle_t forecastClientTaskHandle = NULL;
 
 // Task function that runs in background
-void fetchForecastTask(void * parameter) {
+void forecastClientTask(void * parameter) {
     while(true) {
         HTTPClient http;
         
@@ -109,14 +110,14 @@ void fetchForecastTask(void * parameter) {
 }
 
 // Start the background fetch task
-void startForecastFetchTask() {
+void startForecastClient() {
     xTaskCreatePinnedToCore(
-        fetchForecastTask,   // Task function
-        "ForecastFetch",     // Name
-        16384,               // Stack size (larger for JSON parsing)
-        NULL,                // Parameters
-        1,                   // Priority
-        &forecastTaskHandle, // Task handle
-        0                    // Core (0 = background core)
+        forecastClientTask,          // Task function
+        "ForecastClient",            // Name
+        16384,                       // Stack size (larger for JSON parsing)
+        NULL,                        // Parameters
+        1,                           // Priority
+        &forecastClientTaskHandle,   // Task handle
+        0                            // Core (0 = background core)
     );
 }

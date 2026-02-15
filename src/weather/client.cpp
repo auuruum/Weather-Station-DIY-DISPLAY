@@ -1,13 +1,14 @@
-#include "fetchWeatherData.h"
+#include "client.h"
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include "sets.h"
+#include "../config/settings.h"
+#include "../config/constants.h"
 
 // Task handle for async fetch
-TaskHandle_t fetchTaskHandle = NULL;
+TaskHandle_t weatherClientTaskHandle = NULL;
 
 // Task function that runs in background
-void fetchWeatherTask(void * parameter) {
+void weatherClientTask(void * parameter) {
     while(true) {
         HTTPClient http;
         
@@ -26,7 +27,7 @@ void fetchWeatherTask(void * parameter) {
         if (httpCode == HTTP_CODE_OK) {
             String payload = http.getString();
             
-            StaticJsonDocument<512> doc;
+            JsonDocument doc;
             DeserializationError error = deserializeJson(doc, payload);
             
             if (!error) {
@@ -55,14 +56,14 @@ void fetchWeatherTask(void * parameter) {
 }
 
 // Start the background fetch task
-void startWeatherFetchTask() {
+void startWeatherClient() {
     xTaskCreatePinnedToCore(
-        fetchWeatherTask,   // Task function
-        "WeatherFetch",     // Name
-        8192,               // Stack size
-        NULL,               // Parameters
-        1,                  // Priority
-        &fetchTaskHandle,   // Task handle
-        0                   // Core (0 = background core)
+        weatherClientTask,          // Task function
+        "WeatherClient",            // Name
+        8192,                       // Stack size
+        NULL,                       // Parameters
+        1,                          // Priority
+        &weatherClientTaskHandle,   // Task handle
+        0                           // Core (0 = background core)
     );
 }

@@ -1,7 +1,9 @@
-#include "sets.h"
+#pragma once
 
-static sets::Colors getColorByTemp(float temperature);
+#include <SettingsGyver.h>
+#include "../config/constants.h"
 
+// Get color based on temperature for UI display
 static sets::Colors getColorByTemp(float t) {
     // Comfortable zone
     if (t >= COMFORT_MIN && t <= COMFORT_MAX)

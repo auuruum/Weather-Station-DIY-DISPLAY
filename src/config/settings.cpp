@@ -1,15 +1,16 @@
-#include "sets.h"
-
+#include "settings.h"
+#include "constants.h"
 #include <LittleFS.h>
 #include <WiFiConnector.h>
+#include "../utils/colors.h"
 
-#include "getColorByTemp.h"
-
+// Global weather data variables
 float tempC = 0.0;
 float humidity = 0.0;
 float pressure = 0.0;
 float cast = 0.0;
 
+// Database and settings objects
 GyverDBFile db(&LittleFS, "/data.db");
 SettingsGyver sett(PROJECT_NAME, &db);
 
@@ -40,7 +41,7 @@ static void build(sets::Builder& b) {
     b.LinearGauge(101, "Temperature", MIN_TEMP_C, MAX_TEMP_C, "°C", tempC, getColorByTemp(tempC));
     b.LinearGauge(102, "Humidity", MIN_HUMIDITY, MAX_HUMIDITY, "%", humidity, sets::Colors::Blue);
     b.LinearGauge(103, "Pressure", MIN_PRESSURE, MAX_PRESSURE, "hPa", pressure, sets::Colors::Aqua);
-    b.LinearGauge(104, "Cast", MIN_CAST, MAX_CAST, " ",cast, sets::Colors::Aqua);
+    b.LinearGauge(104, "Cast", MIN_CAST, MAX_CAST, " ", cast, sets::Colors::Aqua);
 
     if (b.beginMenu("WiFi")) {
         b.Input(kk::wifi_ssid, "SSID");
@@ -71,14 +72,12 @@ static void update(sets::Updater& u) {
     u.updateColor(101, getColorByTemp(tempC));
     
     u.update(102, humidity);
-
     u.update(103, pressure);
-
     u.update(104, cast);
 }
 
 // ========== begin ==========
-void sett_begin() {
+void settings_begin() {
     // fs
 #ifdef ESP32
     LittleFS.begin(true);
@@ -102,12 +101,11 @@ void sett_begin() {
     WiFiConnector.onConnect([]() {
         Serial.print("Connected: ");
         Serial.println(WiFi.localIP());
-
     });
+    
     WiFiConnector.onError([]() {
         Serial.print("Error. Start AP: ");
         Serial.println(WiFi.softAPIP());
-
     });
 
     WiFiConnector.setName(PROJECT_NAME);
@@ -125,7 +123,7 @@ void sett_begin() {
 }
 
 // ========== loop ==========
-void sett_loop() {
+void settings_loop() {
     WiFiConnector.tick();
     sett.tick();
 }
