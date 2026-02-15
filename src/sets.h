@@ -27,6 +27,9 @@
 #define COMFORT_MIN 20.0
 #define COMFORT_MAX 24.0
 
+#define MIN_CAST 0
+#define MAX_CAST 10
+
 // Other constants
 #define FETCH_INTERVAL 10000  // milliseconds (10 seconds - weather doesn't change that fast)
 #define FORECAST_INTERVAL 1800000  // milliseconds (30 minutes for forecast updates)
@@ -48,6 +51,7 @@
 extern float tempC;
 extern float humidity;
 extern float pressure;
+extern float cast;
 extern bool weatherDataValid;
 
 #include <GyverDBFile.h>

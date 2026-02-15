@@ -33,6 +33,7 @@ void fetchWeatherTask(void * parameter) {
                 tempC = doc["temp"].as<float>();
                 humidity = doc["humidity"].as<float>();
                 pressure = doc["pressure"].as<float>();
+                cast = doc["cast"].as<float>();
                 weatherDataValid = true;
                 Serial.println("Weather data updated");
             } else {

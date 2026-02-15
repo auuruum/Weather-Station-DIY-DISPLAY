@@ -75,7 +75,9 @@ void showWeatherOnLCD() {
     lcd.setCursor(0, 1);
     lcd.print("P:");
     lcd.print(pressure);
-    lcd.print("hPa");
+
+    lcd.print(" C:");
+    lcd.print(cast);
 }
 
 void showClothRecommendation() {
