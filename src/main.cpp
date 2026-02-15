@@ -48,6 +48,21 @@ void showWeatherDataError() {
     lcd.print("Check sensor...");
 }
 
+void showNoDisplayEnabledError() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Enable displays");
+    lcd.setCursor(0, 1);
+    lcd.print("in settings!");
+}
+
+bool areAllDisplaysDisabled() {
+    return !db[kk::weather_display_state] && 
+           !db[kk::cloth_recommendation_state] && 
+           !db[kk::hourly_forecast_state] && 
+           !db[kk::daily_forecast_state];
+}
+
 void showWeatherOnLCD() {
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -188,6 +203,12 @@ void loop() {
 
     // Rotate display asynchronously
     if (DisplayRotateTimer.tick()) {
+        // Check if all displays are disabled
+        if (areAllDisplaysDisabled()) {
+            showNoDisplayEnabledError();
+            return;
+        }
+        
         // Find next enabled display state
         bool stateChanged = false;
         int attempts = 0;
