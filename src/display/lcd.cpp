@@ -39,8 +39,6 @@ void showWeatherDataError() {
     lcd.print("Weather Data");
     lcd.setCursor(0, 1);
     lcd.print("Not Available");
-    lcd.setCursor(0, 2);
-    lcd.print("Check sensor...");
 }
 
 void showNoDisplayEnabledError() {
@@ -70,21 +68,74 @@ void showWeatherOnLCD() {
 
 void showClothRecommendation() {
     lcd.clear();
+    
+    // Calculate heat index (feels like temperature with humidity)
+    float feelsLike = tempC;
+    if (tempC >= 27) {
+        // Simplified heat index for hot weather
+        feelsLike = tempC + (0.5 * (humidity - 40) / 100 * tempC);
+    } else if (tempC <= 10) {
+        // Wind chill approximation (assuming moderate wind)
+        feelsLike = tempC - (humidity < 50 ? 2 : 0);
+    }
+    
+    // Check for precipitation in next 3 hours
+    bool rainExpected = false;
+    bool snowExpected = false;
+    float totalPrecip = 0;
+    if (hourlyForecastCount > 0) {
+        for (int i = 0; i < min(3, hourlyForecastCount); i++) {
+            totalPrecip += hourlyForecasts[i].precipitation;
+            int code = hourlyForecasts[i].weatherCode;
+            if (code >= 71 && code <= 77) {  // Snow codes
+                snowExpected = true;
+            } else if (code >= 51) {  // Rain/drizzle codes
+                rainExpected = true;
+            }
+        }
+    }
+    
+    // Line 1: Show feels-like temperature (16 chars max)
     lcd.setCursor(0, 0);
-    lcd.print("Temp Comfort:");
-    lcd.setCursor(0, 1);
-    if (tempC < COMFORT_MIN) {
-        lcd.print("It's cold! Wear");
-        lcd.setCursor(0, 2);
-        lcd.print("warm clothes.");
-    } else if (tempC > COMFORT_MAX) {
-        lcd.print("It's hot! Wear");
-        lcd.setCursor(0, 2);
-        lcd.print("light clothes.");
+    lcd.print("Feel:");
+    lcd.print(feelsLike, 1);
+    lcd.print("C ");
+    
+    // Add weather condition based on cast (0-10 forecast scale)
+    if (snowExpected) {
+        lcd.print("Snow");
+    } else if (rainExpected || totalPrecip > 0.5) {
+        lcd.print("Rain");
+    } else if (cast <= 2) {
+        lcd.print("Good");
+    } else if (cast <= 5) {
+        lcd.print("Fair");
+    } else if (cast <= 8) {
+        lcd.print("Poor");
     } else {
-        lcd.print("Comfortable!");
-        lcd.setCursor(0, 2);
-        lcd.print("Enjoy your day!");
+        lcd.print("Storm");
+    }
+    
+    // Line 2: Clothing recommendation (16 chars max)
+    lcd.setCursor(0, 1);
+    if (snowExpected) {
+        lcd.print("Warm+Waterproof!");
+    } else if (rainExpected || totalPrecip > 0.5) {
+        lcd.print("Take umbrella!  ");
+    } else if (feelsLike < -10) {
+        lcd.print("Heavy winter!  ");
+    } else if (feelsLike < 0) {
+        lcd.print("Winter coat!   ");
+    } else if (feelsLike < 10) {
+        lcd.print("Jacket needed  ");
+    } else if (feelsLike < 18) {
+        lcd.print("Light layer    ");
+    } else if (feelsLike < 25) {
+        lcd.print("T-shirt is OK  ");
+    } else if (feelsLike < 30) {
+        lcd.print("Light clothes  ");
+    } else {
+        lcd.print("Stay cool!     ");
     }
 }
 
