@@ -7,8 +7,8 @@
 #include <GTimer.h>
 #include <LiquidCrystal_I2C.h>
 
-#include <fetchWeatherData.h>
-#include <fetchForecastData.h>
+#include "fetch/fetchWeatherData.h"
+#include "fetch/fetchForecastData.h"
 
 GTimer<millis> DisplayRotateTimer(5000, true); // Rotate display every 5 seconds
 

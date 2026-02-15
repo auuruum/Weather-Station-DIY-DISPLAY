@@ -74,7 +74,7 @@ static void update(sets::Updater& u) {
 
     u.update(103, pressure);
 
-    u.update(103, cast);
+    u.update(104, cast);
 }
 
 // ========== begin ==========
