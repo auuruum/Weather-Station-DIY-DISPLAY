@@ -34,6 +34,7 @@
 #define FETCH_INTERVAL 10000  // milliseconds (10 seconds - weather doesn't change that fast)
 #define FORECAST_INTERVAL 1800000  // milliseconds (30 minutes for forecast updates)
 #define SEALEVELPRESSURE_HPA (1013.25)
+#define DISPLAY_ROTATE_INTERVAL 5000 // milliseconds (5 seconds)
 
 // Open-Meteo API configuration
 #define OPENMETEO_API_URL "https://api.open-meteo.com/v1/forecast"
