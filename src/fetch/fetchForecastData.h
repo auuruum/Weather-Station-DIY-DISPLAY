@@ -24,6 +24,9 @@ extern HourlyForecast hourlyForecasts[12];  // Next 12 hours
 extern DailyForecast dailyForecasts[7];     // Next 7 days
 extern int hourlyForecastCount;
 extern int dailyForecastCount;
+extern bool forecastDataValid;
+extern bool forecastApiReachable;
+extern uint32_t lastForecastUpdateMs;
 
 // Start background task for fetching forecast data
 void startForecastFetchTask();

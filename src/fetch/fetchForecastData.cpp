@@ -8,6 +8,9 @@ HourlyForecast hourlyForecasts[12];
 DailyForecast dailyForecasts[7];
 int hourlyForecastCount = 0;
 int dailyForecastCount = 0;
+bool forecastDataValid = false;
+bool forecastApiReachable = false;
+uint32_t lastForecastUpdateMs = 0;
 
 // Task handle for async fetch
 TaskHandle_t forecastTaskHandle = NULL;
@@ -92,13 +95,20 @@ void fetchForecastTask(void * parameter) {
                 Serial.println(hourlyForecastCount);
                 Serial.print("Daily forecasts: ");
                 Serial.println(dailyForecastCount);
+                forecastDataValid = true;
+                forecastApiReachable = true;
+                lastForecastUpdateMs = millis();
             } else {
                 Serial.print("JSON parse error: ");
                 Serial.println(error.c_str());
+                forecastDataValid = false;
+                forecastApiReachable = false;
             }
         } else {
             Serial.print("Forecast HTTP request failed, code: ");
             Serial.println(httpCode);
+            forecastDataValid = false;
+            forecastApiReachable = false;
         }
         
         http.end();

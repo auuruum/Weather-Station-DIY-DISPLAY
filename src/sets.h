@@ -5,6 +5,7 @@
 #define LOCATION_ALTITUDE 112 // meters above sea level (112 for Vilnius)
 
 // 2.2" TFT SPI (ILI9341) settings
+// Width/height are native panel dimensions; UI layout uses runtime tft.width()/tft.height().
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 320
 #define TFT_ROTATION 1
