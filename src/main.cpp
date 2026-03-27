@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <WiFi.h>
+#include <time.h>
 
 #include "sets.h"
 
@@ -21,6 +23,26 @@ enum DisplayState {
 
 DisplayState currentDisplay = DISPLAY_WEATHER;
 int forecastDisplayIndex = 0;  // For cycling through forecasts
+
+uint32_t lastNtpSyncMs = 0;
+
+void syncTimeWithNtp(bool force = false) {
+    if (!WiFi.isConnected()) return;
+
+    uint32_t nowMs = millis();
+    if (!force && lastNtpSyncMs != 0 && (nowMs - lastNtpSyncMs < NTP_SYNC_INTERVAL_MS)) return;
+
+    configTzTime(NTP_TZ_INFO, NTP_SERVER_1, NTP_SERVER_2);
+
+    struct tm tmInfo;
+    if (getLocalTime(&tmInfo, 3000)) {
+        Serial.printf("NTP sync OK: %02d:%02d:%02d\n", tmInfo.tm_hour, tmInfo.tm_min, tmInfo.tm_sec);
+    } else {
+        Serial.println("NTP sync failed");
+    }
+
+    lastNtpSyncMs = nowMs;
+}
 
 bool areAllDisplaysDisabled() {
     return !db[kk::weather_display_state] && 
@@ -55,9 +77,15 @@ void setup() {
     
     // Start async forecast fetch task
     startForecastFetchTask();
+
+    // Initial NTP sync (if Wi-Fi is already connected)
+    syncTimeWithNtp(true);
 }
 
 void loop() {
+    // Re-sync NTP every 6 hours while connected
+    syncTimeWithNtp();
+
     // Weather data is now fetched in background task
     // Forecast data is now fetched in background task
 

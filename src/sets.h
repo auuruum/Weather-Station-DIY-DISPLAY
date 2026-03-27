@@ -8,7 +8,7 @@
 // Width/height are native panel dimensions; UI layout uses runtime tft.width()/tft.height().
 #define TFT_WIDTH 240
 #define TFT_HEIGHT 320
-#define TFT_ROTATION 1
+#define TFT_ROTATION 3
 
 // ESP32 SPI wiring defaults (VSPI)
 #define TFT_PIN_SCK 18
@@ -45,6 +45,12 @@
 #define FORECAST_INTERVAL 1800000  // milliseconds (30 minutes for forecast updates)
 #define SEALEVELPRESSURE_HPA (1013.25)
 #define DISPLAY_ROTATE_INTERVAL 5000 // milliseconds (5 seconds)
+#define NTP_SYNC_INTERVAL_MS (6UL * 60UL * 60UL * 1000UL) // 6 hours
+
+// Europe/Vilnius timezone (EET/EEST with DST rules)
+#define NTP_TZ_INFO "EET-2EEST,M3.5.0/3,M10.5.0/4"
+#define NTP_SERVER_1 "pool.ntp.org"
+#define NTP_SERVER_2 "time.google.com"
 
 // Open-Meteo API configuration
 #define OPENMETEO_API_URL "https://api.open-meteo.com/v1/forecast"

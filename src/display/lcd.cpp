@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <WiFi.h>
+#include <time.h>
 #include <Adafruit_GFX.h>
 
 #include "../fetch/fetchWeatherData.h"
@@ -42,6 +43,18 @@ String ageText(uint32_t lastMs) {
     uint32_t sec = (millis() - lastMs) / 1000;
     if (sec < 60) return String(sec) + "s";
     return String(sec / 60) + "m";
+}
+
+String clockText() {
+    time_t now = time(nullptr);
+    if (now < 100000) return "--:--";
+
+    struct tm localTm;
+    localtime_r(&now, &localTm);
+
+    char out[6];
+    snprintf(out, sizeof(out), "%02d:%02d", localTm.tm_hour, localTm.tm_min);
+    return String(out);
 }
 
 void fillBody(const Palette& p) {
@@ -115,12 +128,15 @@ void drawStatusAndTitle(const String& title, const Palette& p) {
     tft.setTextColor(ILI9341_WHITE, p.panel);
 
     String wifi = WiFi.isConnected() ? "W:OK" : "W:--";
-    String upd = ageText(lastWeatherUpdateMs) + "/" + ageText(lastForecastUpdateMs);
+    String nowText = clockText();
+    String upd = "U:" + ageText(lastWeatherUpdateMs) + "/" + ageText(lastForecastUpdateMs);
     String api = (weatherApiReachable && forecastApiReachable) ? "API:OK" : "API:ER";
 
     tft.setCursor(2, 6);
     tft.print(wifi);
-    tft.setCursor(sw() / 2 - 20, 6);
+    tft.setCursor(sw() / 2 - 14, 6);
+    tft.print(nowText);
+    tft.setCursor(sw() / 2 + 20, 6);
     tft.print(upd);
     tft.setCursor(sw() - 38, 6);
     tft.print(api);
@@ -263,6 +279,7 @@ void showWeatherOnLCD() {
     drawText(textX, 98, "Humidity " + String(humidity, 0) + "%", p, p.text, 2);
     drawText(textX, 126, "Pressure " + String(pressure, 0) + " hPa", p, p.text, 2);
     drawText(textX, 154, getWeatherDescription(code), p, p.accent, 2);
+    drawText(textX, 182, "Cast " + String(cast, 1), p, p.text, 2);
 }
 
 void showClothRecommendation() {
