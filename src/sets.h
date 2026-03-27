@@ -4,10 +4,19 @@
 #define PROJECT_NAME "Weather Display"
 #define LOCATION_ALTITUDE 112 // meters above sea level (112 for Vilnius)
 
-// LCD settings
-#define LCD_ADDR 0x27
-#define LCD_COLS 16
-#define LCD_ROWS 2
+// 2.2" TFT SPI (ILI9341) settings
+#define TFT_WIDTH 240
+#define TFT_HEIGHT 320
+#define TFT_ROTATION 1
+
+// ESP32 SPI wiring defaults (VSPI)
+#define TFT_PIN_SCK 18
+#define TFT_PIN_MISO 19
+#define TFT_PIN_MOSI 23
+#define TFT_PIN_CS 5
+#define TFT_PIN_DC 27
+#define TFT_PIN_RST 33
+#define TFT_PIN_BL 32
 
 // Pin definitions
 #define LED_PIN 2

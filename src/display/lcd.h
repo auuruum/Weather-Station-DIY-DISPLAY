@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include <LiquidCrystal_I2C.h>
+#include <Adafruit_ILI9341.h>
 #include "../sets.h"
 #include "../fetch/fetchForecastData.h"
 
-extern LiquidCrystal_I2C lcd;
+extern Adafruit_ILI9341 tft;
 extern int forecastDisplayIndex;
 
 // Utility functions

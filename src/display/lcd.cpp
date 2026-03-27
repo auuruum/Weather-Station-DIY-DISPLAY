@@ -1,7 +1,26 @@
 #include "lcd.h"
 #include <Arduino.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
 
-LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS);
+Adafruit_ILI9341 tft(TFT_PIN_CS, TFT_PIN_DC, TFT_PIN_RST);
+
+static void drawHeader(const String& title, uint16_t color = ILI9341_CYAN) {
+    tft.fillScreen(ILI9341_BLACK);
+    tft.fillRect(0, 0, TFT_WIDTH, 30, ILI9341_DARKCYAN);
+    tft.setTextColor(ILI9341_WHITE, ILI9341_DARKCYAN);
+    tft.setTextSize(2);
+    tft.setCursor(8, 8);
+    tft.print(title);
+    tft.drawFastHLine(0, 30, TFT_WIDTH, color);
+}
+
+static void drawBodyText(int16_t x, int16_t y, const String& text, uint16_t color = ILI9341_WHITE, uint8_t size = 2) {
+    tft.setTextSize(size);
+    tft.setTextColor(color, ILI9341_BLACK);
+    tft.setCursor(x, y);
+    tft.print(text);
+}
 
 // Convert WMO weather code to readable text
 String getWeatherDescription(int code) {
@@ -22,52 +41,40 @@ String getWeatherDescription(int code) {
 }
 
 void initializeLCD() {
-    lcd.init();          // initialize LCD
-    lcd.backlight();     // turn on backlight
-    lcd.clear();
+    SPI.begin(TFT_PIN_SCK, TFT_PIN_MISO, TFT_PIN_MOSI, TFT_PIN_CS);
+    tft.begin();
+    tft.setRotation(TFT_ROTATION);
 
-    lcd.setCursor(0, 0);
-    lcd.print("Weather Display");
+    pinMode(TFT_PIN_BL, OUTPUT);
+    digitalWrite(TFT_PIN_BL, HIGH);
 
-    lcd.setCursor(0, 1);
-    lcd.print("By A/N");
+    drawHeader("Weather Display", ILI9341_GREEN);
+    drawBodyText(12, 56, "By A/N", ILI9341_YELLOW, 2);
+    drawBodyText(12, 90, "TFT 240x320", ILI9341_LIGHTGREY, 2);
 }
 
 void showWeatherDataError() {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Weather Data");
-    lcd.setCursor(0, 1);
-    lcd.print("Not Available");
+    drawHeader("Weather", ILI9341_RED);
+    drawBodyText(12, 60, "Weather Data", ILI9341_WHITE, 2);
+    drawBodyText(12, 90, "Not Available", ILI9341_RED, 2);
 }
 
 void showNoDisplayEnabledError() {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Enable displays");
-    lcd.setCursor(0, 1);
-    lcd.print("in settings!");
+    drawHeader("Display", ILI9341_ORANGE);
+    drawBodyText(12, 60, "Enable displays", ILI9341_WHITE, 2);
+    drawBodyText(12, 90, "in settings!", ILI9341_ORANGE, 2);
 }
 
 void showWeatherOnLCD() {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("T:");
-    lcd.print(tempC);
-    lcd.print("C H:");
-    lcd.print(humidity);
-    lcd.print("%");
-
-    lcd.setCursor(0, 1);
-    lcd.print("P:");
-    lcd.print(pressure);
-
-    lcd.print(" C:");
-    lcd.print(cast);
+    drawHeader("Current Weather", ILI9341_CYAN);
+    drawBodyText(12, 48, "Temp: " + String(tempC, 1) + " C", ILI9341_WHITE, 3);
+    drawBodyText(12, 92, "Humidity: " + String(humidity, 0) + " %", ILI9341_YELLOW, 2);
+    drawBodyText(12, 124, "Pressure: " + String(pressure, 0) + " hPa", ILI9341_GREEN, 2);
+    drawBodyText(12, 156, "Cast: " + String(cast, 1) + " / 10", ILI9341_MAGENTA, 2);
 }
 
 void showClothRecommendation() {
-    lcd.clear();
+    drawHeader("Clothing", ILI9341_PINK);
     
     // Calculate heat index (feels like temperature with humidity)
     float feelsLike = tempC;
@@ -95,98 +102,90 @@ void showClothRecommendation() {
         }
     }
     
-    // Line 1: Show feels-like temperature (16 chars max)
-    lcd.setCursor(0, 0);
-    lcd.print("Feel:");
-    lcd.print(feelsLike, 1);
-    lcd.print("C ");
+    String condition;
     
-    // Add weather condition based on cast (0-10 forecast scale)
     if (snowExpected) {
-        lcd.print("Snow");
+        condition = "Snow";
     } else if (rainExpected || totalPrecip > 0.5) {
-        lcd.print("Rain");
+        condition = "Rain";
     } else if (cast <= 2) {
-        lcd.print("Good");
+        condition = "Good";
     } else if (cast <= 5) {
-        lcd.print("Fair");
+        condition = "Fair";
     } else if (cast <= 8) {
-        lcd.print("Poor");
+        condition = "Poor";
     } else {
-        lcd.print("Storm");
+        condition = "Storm";
     }
+
+    drawBodyText(12, 48, "Feels like: " + String(feelsLike, 1) + " C", ILI9341_WHITE, 2);
+    drawBodyText(12, 80, "Condition: " + condition, ILI9341_CYAN, 2);
     
-    // Line 2: Clothing recommendation (16 chars max)
-    lcd.setCursor(0, 1);
+    String recommendation;
     if (snowExpected) {
-        lcd.print("Warm+Waterproof!");
+        recommendation = "Warm + waterproof";
     } else if (rainExpected || totalPrecip > 0.5) {
-        lcd.print("Take umbrella!  ");
+        recommendation = "Take umbrella";
     } else if (feelsLike < -10) {
-        lcd.print("Heavy winter!  ");
+        recommendation = "Heavy winter clothes";
     } else if (feelsLike < 0) {
-        lcd.print("Winter coat!   ");
+        recommendation = "Winter coat";
     } else if (feelsLike < 10) {
-        lcd.print("Jacket needed  ");
+        recommendation = "Jacket needed";
     } else if (feelsLike < 18) {
-        lcd.print("Light layer    ");
+        recommendation = "Light layer";
     } else if (feelsLike < 25) {
-        lcd.print("T-shirt is OK  ");
+        recommendation = "T-shirt is OK";
     } else if (feelsLike < 30) {
-        lcd.print("Light clothes  ");
+        recommendation = "Light clothes";
     } else {
-        lcd.print("Stay cool!     ");
+        recommendation = "Stay cool";
     }
+
+    drawBodyText(12, 112, "Recommendation:", ILI9341_YELLOW, 2);
+    drawBodyText(12, 144, recommendation, ILI9341_WHITE, 2);
 }
 
 void showHourlyForecast() {
-    lcd.clear();
+    drawHeader("Hourly Forecast", ILI9341_BLUE);
     if (hourlyForecastCount == 0) {
-        lcd.setCursor(0, 0);
-        lcd.print("No forecast data");
+        drawBodyText(12, 60, "No forecast data", ILI9341_RED, 2);
         return;
     }
     
     // Show 3 hours at a time, cycle through them
     int startIdx = forecastDisplayIndex % hourlyForecastCount;
     
-    lcd.setCursor(0, 0);
     String timeStr = hourlyForecasts[startIdx].time;
     // Extract hour from ISO timestamp (e.g., "2026-01-08T14:00")
     int hourStart = timeStr.indexOf('T') + 1;
-    lcd.print(timeStr.substring(hourStart, hourStart + 5));
-    lcd.print(" ");
-    lcd.print(hourlyForecasts[startIdx].temperature, 1);
-    lcd.print("C");
-    
-    lcd.setCursor(0, 1);
-    lcd.print(getWeatherDescription(hourlyForecasts[startIdx].weatherCode));
+    String timeLabel = timeStr.substring(hourStart, hourStart + 5);
+
+    drawBodyText(12, 52, "Time: " + timeLabel, ILI9341_WHITE, 2);
+    drawBodyText(12, 84, "Temp: " + String(hourlyForecasts[startIdx].temperature, 1) + " C", ILI9341_YELLOW, 2);
+    drawBodyText(12, 116, "Rain: " + String(hourlyForecasts[startIdx].precipitation, 1) + " mm", ILI9341_CYAN, 2);
+    drawBodyText(12, 148, getWeatherDescription(hourlyForecasts[startIdx].weatherCode), ILI9341_GREEN, 2);
 }
 
 void showDailyForecast() {
-    lcd.clear();
+    drawHeader("Daily Forecast", ILI9341_NAVY);
     if (dailyForecastCount <= 1) {
-        lcd.setCursor(0, 0);
-        lcd.print("No forecast data");
+        drawBodyText(12, 60, "No forecast data", ILI9341_RED, 2);
         return;
     }
     
     // Skip today (index 0), show next 3 days (indices 1, 2, 3)
     int dayIdx = (forecastDisplayIndex % min(3, dailyForecastCount - 1)) + 1;
     
-    lcd.setCursor(0, 0);
     String dateStr = dailyForecasts[dayIdx].date;
-    lcd.print(dateStr.substring(5));  // Show MM-DD
+    String shortDate = dateStr.substring(5);
     Serial.println(dateStr.substring(5)); 
-    lcd.print(" ");
-    lcd.print(dailyForecasts[dayIdx].tempMin, 0);
     Serial.println(dailyForecasts[dayIdx].tempMin, 0);
-    lcd.print("|");
-    lcd.print(dailyForecasts[dayIdx].tempMax, 0);
     Serial.println(dailyForecasts[dayIdx].tempMax, 0);
-    lcd.print("C");
-    
-    lcd.setCursor(0, 1);
-    lcd.print(getWeatherDescription(dailyForecasts[dayIdx].weatherCode));
     Serial.println(getWeatherDescription(dailyForecasts[dayIdx].weatherCode));
+
+    drawBodyText(12, 52, "Date: " + shortDate, ILI9341_WHITE, 2);
+    drawBodyText(12, 84, "Min/Max: " + String(dailyForecasts[dayIdx].tempMin, 0) + "|" + String(dailyForecasts[dayIdx].tempMax, 0) + " C", ILI9341_YELLOW, 2);
+    drawBodyText(12, 116, "Rain: " + String(dailyForecasts[dayIdx].precipitationSum, 1) + " mm", ILI9341_CYAN, 2);
+    drawBodyText(12, 148, getWeatherDescription(dailyForecasts[dayIdx].weatherCode), ILI9341_GREEN, 2);
 }

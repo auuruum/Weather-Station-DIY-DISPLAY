@@ -2,10 +2,7 @@
 
 #include "sets.h"
 
-#include <Wire.h>
-
 #include <GTimer.h>
-#include <LiquidCrystal_I2C.h>
 
 #include "fetch/fetchWeatherData.h"
 #include "fetch/fetchForecastData.h"
@@ -35,7 +32,6 @@ bool areAllDisplaysDisabled() {
 void setup() {
     Serial.begin(115200);
     Serial.println();
-    Wire.begin(21, 22);
 
     initializeLCD();
 
