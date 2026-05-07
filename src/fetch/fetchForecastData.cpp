@@ -1,6 +1,11 @@
 #include "fetchForecastData.h"
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#endif
 #include "sets.h"
 
 // Global forecast storage
@@ -18,6 +23,13 @@ TaskHandle_t forecastTaskHandle = NULL;
 // Task function that runs in background
 void fetchForecastTask(void * parameter) {
     while(true) {
+        if (!WiFi.isConnected()) {
+            forecastApiReachable = false;
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        uint32_t nextDelayMs = FORECAST_INTERVAL;
         HTTPClient http;
         
         String url = String(OPENMETEO_API_URL) + 
@@ -101,20 +113,22 @@ void fetchForecastTask(void * parameter) {
             } else {
                 Serial.print("JSON parse error: ");
                 Serial.println(error.c_str());
-                forecastDataValid = false;
+                forecastDataValid = lastForecastUpdateMs != 0;
                 forecastApiReachable = false;
+                nextDelayMs = 10000;
             }
         } else {
             Serial.print("Forecast HTTP request failed, code: ");
             Serial.println(httpCode);
-            forecastDataValid = false;
+            forecastDataValid = lastForecastUpdateMs != 0;
             forecastApiReachable = false;
+            nextDelayMs = 10000;
         }
         
         http.end();
         
-        // Wait before next fetch (30 minutes)
-        vTaskDelay(FORECAST_INTERVAL / portTICK_PERIOD_MS);
+        // Retry quickly after failures, otherwise use normal forecast interval.
+        vTaskDelay(nextDelayMs / portTICK_PERIOD_MS);
     }
 }
 

@@ -1,6 +1,11 @@
 #include "fetchWeatherData.h"
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#endif
 #include "sets.h"
 
 bool weatherApiReachable = false;
@@ -12,6 +17,13 @@ TaskHandle_t fetchTaskHandle = NULL;
 // Task function that runs in background
 void fetchWeatherTask(void * parameter) {
     while(true) {
+        if (!WiFi.isConnected()) {
+            weatherApiReachable = false;
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+            continue;
+        }
+
+        uint32_t nextDelayMs = FETCH_INTERVAL;
         HTTPClient http;
         
         String url =
@@ -44,20 +56,22 @@ void fetchWeatherTask(void * parameter) {
             } else {
                 Serial.print("JSON parse error: ");
                 Serial.println(error.c_str());
-                weatherDataValid = false;
+                weatherDataValid = lastWeatherUpdateMs != 0;
                 weatherApiReachable = false;
+                nextDelayMs = 2000;
             }
         } else {
             Serial.print("HTTP request failed, code: ");
             Serial.println(httpCode);
-            weatherDataValid = false;
+            weatherDataValid = lastWeatherUpdateMs != 0;
             weatherApiReachable = false;
+            nextDelayMs = 2000;
         }
 
         http.end();
         
-        // Wait before next fetch
-        vTaskDelay(FETCH_INTERVAL / portTICK_PERIOD_MS);
+        // Retry quickly after failures, otherwise use normal refresh interval.
+        vTaskDelay(nextDelayMs / portTICK_PERIOD_MS);
     }
 }
 

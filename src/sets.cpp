@@ -3,6 +3,12 @@
 #include <LittleFS.h>
 #include <WiFiConnector.h>
 
+#ifdef ESP8266
+#include <ESP8266mDNS.h>
+#else
+#include <ESPmDNS.h>
+#endif
+
 #include "getColorByTemp.h"
 
 float tempC = 0.0;
@@ -12,6 +18,23 @@ float cast = 0.0;
 
 GyverDBFile db(&LittleFS, "/data.db");
 SettingsGyver sett(PROJECT_NAME, &db);
+
+namespace {
+
+bool mdnsStarted = false;
+
+void startMdns() {
+    if (mdnsStarted) return;
+
+    if (MDNS.begin(MDNS_ADDRESS)) {
+        mdnsStarted = true;
+        Serial.println("mDNS responder started");
+    } else {
+        Serial.println("Error setting up mDNS responder");
+    }
+}
+
+}
 
 // ========== build ==========
 static void build(sets::Builder& b) {
@@ -102,6 +125,7 @@ void sett_begin() {
     WiFiConnector.onConnect([]() {
         Serial.print("Connected: ");
         Serial.println(WiFi.localIP());
+        startMdns();
 
     });
     WiFiConnector.onError([]() {
@@ -127,5 +151,10 @@ void sett_begin() {
 // ========== loop ==========
 void sett_loop() {
     WiFiConnector.tick();
+#ifdef ESP8266
+    if (mdnsStarted) {
+        MDNS.update();
+    }
+#endif
     sett.tick();
 }

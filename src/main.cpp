@@ -64,14 +64,6 @@ void setup() {
     Serial.print("SETUP | LED is now ");
     Serial.println(db[kk::switch_state] ? "ON" : "OFF");
 
-    if (!MDNS.begin(MDNS_ADDRESS)) {
-        Serial.println("Error setting up MDNS responder!");
-        while(1) {
-        delay(1000);
-        }
-    }
-    Serial.println("mDNS responder started");
-    
     // Start async weather fetch task
     startWeatherFetchTask();
     
