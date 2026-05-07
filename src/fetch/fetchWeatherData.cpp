@@ -3,6 +3,9 @@
 #include <ArduinoJson.h>
 #include "sets.h"
 
+bool weatherApiReachable = false;
+uint32_t lastWeatherUpdateMs = 0;
+
 // Task handle for async fetch
 TaskHandle_t fetchTaskHandle = NULL;
 
@@ -26,7 +29,7 @@ void fetchWeatherTask(void * parameter) {
         if (httpCode == HTTP_CODE_OK) {
             String payload = http.getString();
             
-            StaticJsonDocument<512> doc;
+            JsonDocument doc;
             DeserializationError error = deserializeJson(doc, payload);
             
             if (!error) {
@@ -35,16 +38,20 @@ void fetchWeatherTask(void * parameter) {
                 pressure = doc["pressure"].as<float>();
                 cast = doc["cast"].as<float>();
                 weatherDataValid = true;
+                weatherApiReachable = true;
+                lastWeatherUpdateMs = millis();
                 Serial.println("Weather data updated");
             } else {
                 Serial.print("JSON parse error: ");
                 Serial.println(error.c_str());
                 weatherDataValid = false;
+                weatherApiReachable = false;
             }
         } else {
             Serial.print("HTTP request failed, code: ");
             Serial.println(httpCode);
             weatherDataValid = false;
+            weatherApiReachable = false;
         }
 
         http.end();
